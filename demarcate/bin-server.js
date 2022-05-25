@@ -16,6 +16,9 @@ const toScript = command =>
 
 module.exports = async function binServer({ bin, volumes: inVolumes }, f)
 {
+    if (!bin || Object.keys(bin).length <= 0)
+        return Promise.resolve(f({ volumes: inVolumes, port: false }));
+
     const handlers = Object.fromEntries(Object
         .entries(bin)
         .map(([key, value]) =>

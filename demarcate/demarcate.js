@@ -57,7 +57,9 @@ module.exports = async function demarcate(
     {
         console.log(`Building ${image}`);
 
-        await docker.build(["-t", image, dirname(dockerfile)]);
+        await docker.build(
+            ["-t", image, dirname(dockerfile)],
+            { stdio: "inherit" });
     }
 
     await binServer(
@@ -77,7 +79,7 @@ module.exports = async function demarcate(
                 .map(({ from, to, readonly = false }) =>
                     ["-v", `${from}:${to}${ readonly ? ":ro" : ""}`])
                 .flat(),
-            "--env", `HOST_SETUP_PORT=${port}`,
+            ...(port ? ["--env", `HOST_SETUP_PORT=${port}`] : []),
             image
         ], { stdio: "inherit", captureStdio: false }));
 }
