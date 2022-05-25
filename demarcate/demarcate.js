@@ -40,6 +40,7 @@ const PERSISTENT_DATA = join(
 
 module.exports = async function demarcate(
 {
+    user,
     name,
     bin,
     volumes,
@@ -64,7 +65,7 @@ module.exports = async function demarcate(
         bin,
         volumes: 
         [
-            { from: bashHistoryPath, to: `/home/${name}/.bash_history` },
+            { from: bashHistoryPath, to: `/home/${user}/.bash_history` },
             ...volumes
         ]
     },
