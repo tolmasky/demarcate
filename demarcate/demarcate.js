@@ -5,6 +5,7 @@ const
     readFileSync: read,
     writeFileSync: write
 } = require("fs");
+const { Readable } = require("stream");
 const { dirname, join } = require("path");
 
 const spawn = require("@await/spawn");
@@ -44,10 +45,12 @@ module.exports = async function demarcate(
     name,
     bin,
     volumes,
-    dockerfile
+    dockerfile,
+    dockerfileContents = read(dockerfile, "utf-8"),
+    workspace = dirname(dockerfile)
 })
 {
-    const hash = toSHA256(read(dockerfile, "utf-8"));
+    const hash = toSHA256(dockerfileContents);
     const image = `${name}:${hash}`;
 
     const persistentData = join(PERSISTENT_DATA, name);
@@ -57,15 +60,21 @@ module.exports = async function demarcate(
     {
         console.log(`Building ${image}`);
 
+        const dockerfileBuffer = Buffer.from(dockerfileContents, "utf-8");
+
         await docker.build(
-            ["-t", image, dirname(dockerfile)],
-            { stdio: "inherit" });
+        [
+            "-t", image,
+            "-f-",
+            dirname(workspace)
+        ],
+        { stdio:[dockerfileBuffer, "inherit", "inherit"] });
     }
 
     await binServer(
     {
         bin,
-        volumes: 
+        volumes:
         [
             { from: bashHistoryPath, to: `/home/${user}/.bash_history` },
             ...volumes
