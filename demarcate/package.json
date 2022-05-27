@@ -1,6 +1,6 @@
 {
   "name": "demarcate",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "description": "",
   "main": "demarcate.js",
   "scripts": {
@@ -14,6 +14,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@await/spawn": "^8.0.0"
+    "@await/spawn": "^9.0.0"
   }
 }
