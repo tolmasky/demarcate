@@ -60,15 +60,13 @@ module.exports = async function demarcate(
     {
         console.log(`Building ${image}`);
 
-        const dockerfileBuffer = Buffer.from(dockerfileContents, "utf-8");
-
         await docker.build(
         [
             "-t", image,
             "-f-",
             workspace
         ],
-        { stdio:[dockerfileBuffer, "inherit", "inherit"] });
+        { input: dockerfileContents, stdio: "inherit" });
     }
 
     await binServer(
