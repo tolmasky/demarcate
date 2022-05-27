@@ -16,8 +16,8 @@ const binServer = require("./bin-server");
 const docker = Object.fromEntries(
     ["build", "images", "run"]
         .map(command => [command, async (args, ...rest) =>
-            (await spawn("docker", [command, ...args], ...rest))
-                .stdout
+            ((await spawn("docker", [command, ...args], ...rest))
+                .stdout || "")
                 .trim()]));
 
 const mkdirp = dirname => (mkdir(dirname, { recursive: true }), dirname);
@@ -48,7 +48,7 @@ module.exports = async function demarcate(
     dockerfile,
     dockerfileContents = read(dockerfile, "utf-8"),
     workspace = dirname(dockerfile)
-})
+}, ...rest)
 {
     const hash = toSHA256(dockerfileContents);
     const image = `${name}:${hash}`;
@@ -66,7 +66,7 @@ module.exports = async function demarcate(
         [
             "-t", image,
             "-f-",
-            dirname(workspace)
+            workspace
         ],
         { stdio:[dockerfileBuffer, "inherit", "inherit"] });
     }
@@ -89,6 +89,7 @@ module.exports = async function demarcate(
                     ["-v", `${from}:${to}${ readonly ? ":ro" : ""}`])
                 .flat(),
             ...(port ? ["--env", `HOST_SETUP_PORT=${port}`] : []),
-            image
+            image,
+            ...rest
         ], { stdio: "inherit", captureStdio: false }));
 }
