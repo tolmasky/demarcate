@@ -38,8 +38,8 @@ module.exports = async function binServer({ bin, volumes: inVolumes }, f)
             .map(({ from, to }) => [normalize(to).replace(/\/+$/, ""), from]));
 
     const server = net.createServer(
-        connection =>
-            handle({ handlers, mappings }, connection));
+        stream =>
+            handle({ handlers, mappings }, stream));
 
     await new Promise((resolve, reject) =>
         server.listen({ port: 0 }, () => Promise
@@ -47,16 +47,16 @@ module.exports = async function binServer({ bin, volumes: inVolumes }, f)
             .then(resolve, reject)));
 }
 
-async function handle({ handlers, mappings }, connection)
+async function handle({ handlers, mappings }, stream)
 {
-    const read = toRead(connection);
-    const write = toWrite(connection);
+    const read = toRead(stream);
+    const write = toWrite(stream);
 
     const command = await read.string();
     const args = (await read.strings())
         .map(argument => toLocalPath(mappings, argument));
 
-    await handlers[command](write, ...args);
+    await handlers[command](stream, write, ...args);
 }
 
 function toLocalPath(mappings, argument)
@@ -79,17 +79,21 @@ function toLocalPath(mappings, argument)
     return join(mappings[prefix], path.replace(`${prefix}/`, ""));
 }
 
-const toRemoteBin = command => async function (write, ...args)
+const toRemoteBin = command => async function (stream, write, ...args)
 {
     const process = spawn(command, args);
+
+    stream.on("close", () => kill(process.pid));
+    stream.on("error", () => kill(process.pid));
 
     process.stdout.on("data", data => write("stdout", data));
     process.stderr.on("data", data => write("stderr", data));
 
-    process.on("close", exitCode => write("exited", exitCode));
+    process.on("close", (exitCode, signal) =>
+        exitCode !== null && write("exited", exitCode));
 }
 
-const toFunctionBin = command => async function (write, ...args)
+const toFunctionBin = command => async function (stream, write, ...args)
 {
     try
     {
@@ -102,3 +106,12 @@ const toFunctionBin = command => async function (write, ...args)
         write("exited", 1);
     }
 }
+
+const kill = pid => require("ps-tree")
+    (pid, (error, children) =>
+        !error && spawn("kill",
+        [
+            "-s",
+            "SIGINT",
+            pid, ...children.map(process => process.PID)
+        ]));

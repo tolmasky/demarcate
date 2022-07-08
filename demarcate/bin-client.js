@@ -9,7 +9,7 @@ const framedClient = require("/home/runkitdev/tonic/develop/packages/framed/clie
 {
     const [command, ...args] = process.argv.slice(1);
 
-    framedClient("host.docker.internal", HOST_SETUP_PORT,
+    framedClient({ port: HOST_SETUP_PORT, host: "host.docker.internal"},
     {
         start: ({ write }) => write(command, args.length, ...args),
         stdout: async ({ read }) => process.stdout.write(await read.buffer()),
