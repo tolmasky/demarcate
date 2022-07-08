@@ -14,8 +14,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@await/event": "^1.0.3",
-    "@await/spawn": "^9.0.0",
-    "ps-tree": "^1.2.0"
+    "ps-tree": "^1.2.0",
+    "structured-stream": "^1.0.0-alpha.1"
   }
 }

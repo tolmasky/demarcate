@@ -1,11 +1,11 @@
 const { hasOwnProperty } = Object;
 
 const { join, normalize } = require("path");
-const net = require("net");
-const toRead = require("framed/to-read");
-const toWrite = require("framed/to-write");
-
 const { spawn } = require("child_process");
+const net = require("net");
+
+const toRead = require("structured-stream/to-read");
+const toWrite = require("structured-stream/to-write");
 
 const binClientPath = require.resolve("./bin-client.js");
 

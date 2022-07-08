@@ -75,6 +75,7 @@ module.exports = async function demarcate(
         volumes:
         [
             { from: bashHistoryPath, to: `/home/${user}/.bash_history` },
+            { from: __dirname, to: "/.demarcate/", readonly: true },
             ...volumes
         ]
     },
