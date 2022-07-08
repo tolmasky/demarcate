@@ -1,39 +1,19 @@
-#!/usr/bin/env -S node --no-warnings
+#!/usr/bin/env -S node
 
 const { basename } = require("path");
 const { HOST_SETUP_PORT } = process.env;
+const framedClient = require("/home/runkitdev/tonic/develop/packages/framed/client");
 
 
 (async function ()
 {
-    const args = process.argv.slice(1);
-    const { exitCode, stdout, stderr } = await remote(HOST_SETUP_PORT, args);
+    const [command, ...args] = process.argv.slice(1);
 
-    if (stdout.length > 0)
-        process.stdout.write(stdout);
-    
-    if (stderr.length > 0)
-        process.stderr.write(stderr);
-
-    if (exitCode > 0)
-        process.exit(exitCode);
-})();
-
-async function remote (port, [command, ...args])
-{
-    const URL = `http://host.docker.internal:${port}/`;
-    const { result, value } = await (await fetch(URL,
+    framedClient("host.docker.internal", HOST_SETUP_PORT,
     {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command, arguments: args })    
-    })).json();
-
-    if (result === "resolved")
-        return value;
-
-    if (hasOwnProperty.call(value, "value"))
-        throw value.value;
-
-    throw Object.assign(Error(value.error.message), value.error);
-};
+        start: ({ write }) => write(command, args.length, ...args),
+        stdout: async ({ read }) => process.stdout.write(await read.buffer()),
+        stderr: async ({ read }) => process.stderr.write(await read.buffer()),
+        exited: async ({ read }) => process.exit(await read.UInt32BE())
+    });
+})();

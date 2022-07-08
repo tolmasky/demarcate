@@ -1,17 +1,13 @@
 const { hasOwnProperty } = Object;
 
 const { join, normalize } = require("path");
-const http = require("http");
+const net = require("net");
+const toRead = require("framed/to-read");
+const toWrite = require("framed/to-write");
 
-const spawn = require("@await/spawn");
+const { spawn } = require("child_process");
 
 const binClientPath = require.resolve("./bin-client.js");
-
-const toScript = command =>
-    typeof command === "function" ?
-        command :
-        async (...arguments) =>
-            await spawn(command, arguments, { rejectOnExitCode: false });
 
 
 module.exports = async function binServer({ bin, volumes: inVolumes }, f)
@@ -21,8 +17,14 @@ module.exports = async function binServer({ bin, volumes: inVolumes }, f)
 
     const handlers = Object.fromEntries(Object
         .entries(bin)
-        .map(([key, value]) =>
-            [`/usr/bin/${key}`, toScript(value === true ? key : value)]));
+        .map(([key, value]) => [key, value === true ? key : value])
+        .map(([key, command]) =>
+        [
+            `/usr/bin/${key}`,
+            typeof command === "function" ?
+                toFunctionBin(command) :
+                toRemoteBin(command)
+        ]));
 
     const volumes =
     [
@@ -35,46 +37,26 @@ module.exports = async function binServer({ bin, volumes: inVolumes }, f)
         .fromEntries(volumes
             .map(({ from, to }) => [normalize(to).replace(/\/+$/, ""), from]));
 
-    const server = http.createServer(
-        (request, response) =>
-            handle({ handlers, mappings }, request, response));
+    const server = net.createServer(
+        connection =>
+            handle({ handlers, mappings }, connection));
 
     await new Promise((resolve, reject) =>
-        server.listen(() => Promise
+        server.listen({ port: 0 }, () => Promise
             .resolve(f({ volumes, port: server.address().port }))
             .then(resolve, reject)));
 }
 
-function handle({ handlers, mappings }, request, response)
+async function handle({ handlers, mappings }, connection)
 {
-    const chunks = [];
+    const read = toRead(connection);
+    const write = toWrite(connection);
 
-    request.on("data", data => chunks.push(data.toString()))
-    request.on("end", async function ()
-    {
-        const respond = (result, value) =>
-            (response.statusCode = 200,
-            response.end(JSON.stringify({ result, value })));
+    const command = await read.string();
+    const args = (await read.strings())
+        .map(argument => toLocalPath(mappings, argument));
 
-        try
-        {
-            const remote = JSON.parse(chunks.join(""));
-            const handler = handlers[remote.command];
-            const value =
-                await handler(...remote
-                    .arguments
-                    .map(argument => toLocalPath(mappings, argument)));
-
-            return respond("resolved", value);
-        }
-        catch (error)
-        {
-            respond("rejected",
-                error instanceof Error ?
-                    { error: { message: error.message, stack: error.stack } } :
-                    { value: error });
-        }
-    });
+    await handlers[command](write, ...args);
 }
 
 function toLocalPath(mappings, argument)
@@ -95,4 +77,28 @@ function toLocalPath(mappings, argument)
         return argument;
 
     return join(mappings[prefix], path.replace(`${prefix}/`, ""));
+}
+
+const toRemoteBin = command => async function (write, ...args)
+{
+    const process = spawn(command, args);
+
+    process.stdout.on("data", data => write("stdout", data));
+    process.stderr.on("data", data => write("stderr", data));
+
+    process.on("close", exitCode => write("exited", exitCode));
+}
+
+const toFunctionBin = command => async function (write, ...args)
+{
+    try
+    {
+        write("stdout", await command(...args));
+        write("exited", 0);
+    }
+    catch (error)
+    {
+        write("stderr", error + "");
+        write("exited", 1);
+    }
 }
