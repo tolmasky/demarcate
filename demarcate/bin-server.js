@@ -53,10 +53,11 @@ async function handle({ handlers, mappings }, stream)
     const write = toWrite(stream);
 
     const command = await read.string();
+    const stdioLength = await read.UInt32BE();
     const args = (await read.strings())
         .map(argument => toLocalPath(mappings, argument));
 
-    await handlers[command](stream, write, ...args);
+    await handlers[command](stream, stdioLength, write, args);
 }
 
 function toLocalPath(mappings, argument)
@@ -79,21 +80,22 @@ function toLocalPath(mappings, argument)
     return join(mappings[prefix], path.replace(`${prefix}/`, ""));
 }
 
-const toRemoteBin = command => async function (stream, write, ...args)
+const toRemoteBin = command => async function (stream, stdioLength, write, args)
 {
-    const process = spawn(command, args);
+    const stdio = Array.from({ length: stdioLength }, index => "pipe");
+    const child = spawn(command, args, { stdio });
 
-    stream.on("close", () => kill(process.pid));
-    stream.on("error", () => kill(process.pid));
+    stream.on("close", () => kill(child.pid));
+    stream.on("error", () => kill(child.pid));
 
-    process.stdout.on("data", data => write("stdout", data));
-    process.stderr.on("data", data => write("stderr", data));
+    child.stdio.map((pipe, index) =>
+        pipe.on("data", data => write("stdio", index, data)));
 
-    process.on("close", (exitCode, signal) =>
+    child.on("close", (exitCode, signal) =>
         exitCode !== null && write("exited", exitCode));
 }
 
-const toFunctionBin = command => async function (stream, write, ...args)
+const toFunctionBin = command => async function (stream, stdioLength, write, args)
 {
     try
     {
