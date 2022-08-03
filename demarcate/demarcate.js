@@ -106,7 +106,14 @@ module.exports = async function demarcate(
 
 async function toInstalledClientModules(persistent)
 {
-    const lockfilePath = join(__dirname, "package-lock.json");
+    // We are forced to use npm-shrinkwrap.json instead of package-lock.json in
+    // order to have it included in the package, as you are not able to publish
+    // package-lock.json files:
+    //
+    // 1. https://docs.npmjs.com/cli/v8/configuring-npm/package-lock-json
+    // 2. https://docs.npmjs.com/cli/v8/configuring-npm/npm-shrinkwrap-json
+    //
+    const lockfilePath = join(__dirname, "npm-shrinkwrap.json");
     const checksum = toSHA256(read(lockfilePath, "utf-8"));
     const clientModulesPath = join(persistent, "client-modules", checksum);
 
@@ -114,7 +121,7 @@ async function toInstalledClientModules(persistent)
     {
         mkdir(clientModulesPath, { recursive: true });
 
-        ["package.json", "package-lock.json"]
+        ["package.json", "npm-shrinkwrap.json"]
             .map(filename => copy(
                 join(__dirname, filename),
                 join(clientModulesPath, filename)));
