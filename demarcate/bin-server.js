@@ -38,6 +38,7 @@ module.exports = async function binServer({ bin, volumes: inVolumes }, f)
             .map(({ from, to }) => [normalize(to).replace(/\/+$/, ""), from]));
 
     const server = net.createServer(
+        { keepAlive: true },
         stream =>
             handle({ handlers, mappings }, stream));
 
