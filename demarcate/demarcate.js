@@ -1,5 +1,6 @@
 const
 {
+    copyFileSync: copy,
     existsSync: exists,
     mkdirSync: mkdir,
     readFileSync: read,
@@ -75,7 +76,16 @@ module.exports = async function demarcate(
         volumes:
         [
             { from: bashHistoryPath, to: `/home/${user}/.bash_history` },
-            { from: __dirname, to: "/.demarcate/", readonly: true },
+
+            // We have to do this whole convoluted thing since we have no idea
+            // where npm might actually install the structured-stream package
+            // due to deduping.
+            {
+                from: await toInstalledClientModules(persistentData),
+                to: "/.demarcate",
+                readonly: true
+            },
+
             ...volumes
         ]
     },
@@ -91,4 +101,26 @@ module.exports = async function demarcate(
             image,
             ...rest
         ], { stdio: "inherit", captureStdio: false }));
+}
+
+
+async function toInstalledClientModules(persistent)
+{
+    const lockfilePath = join(__dirname, "package-lock.json");
+    const checksum = toSHA256(read(lockfilePath, "utf-8"));
+    const clientModulesPath = join(persistent, "client-modules", checksum);
+
+    if (!exists(clientModulesPath))
+    {
+        mkdir(clientModulesPath, { recursive: true });
+
+        ["package.json", "package-lock.json"]
+            .map(filename => copy(
+                join(__dirname, filename),
+                join(clientModulesPath, filename)));
+
+        await spawn("npm", ["install"], { cwd: clientModulesPath });
+    }
+
+    return clientModulesPath;
 }
