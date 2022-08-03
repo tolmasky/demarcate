@@ -10,7 +10,7 @@
       "license": "MIT",
       "dependencies": {
         "ps-tree": "^1.2.0",
-        "structured-stream": "^2.0.0-alpha.1"
+        "structured-stream": "2.0.0-alpha.2"
       }
     },
     "node_modules/@await/event": {
@@ -89,9 +89,9 @@
       }
     },
     "node_modules/structured-stream": {
-      "version": "2.0.0-alpha.1",
-      "resolved": "https://registry.npmjs.org/structured-stream/-/structured-stream-2.0.0-alpha.1.tgz",
-      "integrity": "sha512-CF8ZgY7Du2jFtXxw2Evoinbu5TnuKPo5pE3AhFfRq60vghYb41bww0TWqWc8gakYqcpPe45E9V6C+Q1cqY6m9Q==",
+      "version": "2.0.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/structured-stream/-/structured-stream-2.0.0-alpha.2.tgz",
+      "integrity": "sha512-F5j3TTr74JbYFEOzh7/JPdPVOKDuG7rMlp15KIoYfU/LXJwN7qlWQJ3Q7YdYoHJdAeBoFhpFihw9J4SHCGDeIA==",
       "dependencies": {
         "@await/event": "^1.0.3"
       }
@@ -170,9 +170,9 @@
       }
     },
     "structured-stream": {
-      "version": "2.0.0-alpha.1",
-      "resolved": "https://registry.npmjs.org/structured-stream/-/structured-stream-2.0.0-alpha.1.tgz",
-      "integrity": "sha512-CF8ZgY7Du2jFtXxw2Evoinbu5TnuKPo5pE3AhFfRq60vghYb41bww0TWqWc8gakYqcpPe45E9V6C+Q1cqY6m9Q==",
+      "version": "2.0.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/structured-stream/-/structured-stream-2.0.0-alpha.2.tgz",
+      "integrity": "sha512-F5j3TTr74JbYFEOzh7/JPdPVOKDuG7rMlp15KIoYfU/LXJwN7qlWQJ3Q7YdYoHJdAeBoFhpFihw9J4SHCGDeIA==",
       "requires": {
         "@await/event": "^1.0.3"
       }
