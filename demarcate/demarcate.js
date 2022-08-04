@@ -77,14 +77,9 @@ module.exports = async function demarcate(
         [
             { from: bashHistoryPath, to: `/home/${user}/.bash_history` },
 
-            // We have to do this whole convoluted thing since we have no idea
-            // where npm might actually install the structured-stream package
-            // due to deduping.
-            {
-                from: await toInstalledClientModules(persistentData),
-                to: "/.demarcate",
-                readonly: true
-            },
+            // This includes our `node_modules` because we use
+            // `npm-shrinkwrap.json` instead of `package-lock.json`.
+            { from: __dirname, to: "/.demarcate/", readonly: true },
 
             ...volumes
         ]
@@ -101,33 +96,4 @@ module.exports = async function demarcate(
             image,
             ...rest
         ], { stdio: "inherit", captureStdio: false }));
-}
-
-
-async function toInstalledClientModules(persistent)
-{
-    // We are forced to use npm-shrinkwrap.json instead of package-lock.json in
-    // order to have it included in the package, as you are not able to publish
-    // package-lock.json files:
-    //
-    // 1. https://docs.npmjs.com/cli/v8/configuring-npm/package-lock-json
-    // 2. https://docs.npmjs.com/cli/v8/configuring-npm/npm-shrinkwrap-json
-    //
-    const lockfilePath = join(__dirname, "npm-shrinkwrap.json");
-    const checksum = toSHA256(read(lockfilePath, "utf-8"));
-    const clientModulesPath = join(persistent, "client-modules", checksum);
-
-    if (!exists(clientModulesPath))
-    {
-        mkdir(clientModulesPath, { recursive: true });
-
-        ["package.json", "npm-shrinkwrap.json"]
-            .map(filename => copy(
-                join(__dirname, filename),
-                join(clientModulesPath, filename)));
-
-        await spawn("npm", ["install"], { cwd: clientModulesPath });
-    }
-
-    return clientModulesPath;
 }
