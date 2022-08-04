@@ -15,6 +15,6 @@
   "license": "MIT",
   "dependencies": {
     "ps-tree": "^1.2.0",
-    "structured-stream": "2.0.0-alpha.3"
+    "structured-stream": "2.0.0-alpha.4"
   }
 }
