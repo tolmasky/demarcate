@@ -51,6 +51,17 @@ module.exports = async function demarcate(
     workspace = dirname(dockerfile)
 }, ...rest)
 {
+    const [major, minor] = process
+        .version
+        .match(/^v(\d+)\.(\d+).(\d+)/)
+        .slice(1)
+        .map(version => parseInt(version, 10));
+
+    if (major < 18 || major === 18 && minor < 7)
+        throw Error(
+            `demarcate requires node version 18.7.0 or higher, ` +
+            `but detected node version ${process.version.substr(1)}.`);
+
     const hash = toSHA256(dockerfileContents);
     const image = `${name}:${hash}`;
 
