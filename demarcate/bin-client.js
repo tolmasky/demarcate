@@ -18,7 +18,13 @@ const toStdio = given((
     // then take only 0-last that are consecutive.
     const stdioLength = 4;//process.stdio.length;
 
-    structured({ port: HOST_SETUP_PORT, host: "host.docker.internal"},
+    structured
+    ({
+        host: "host.docker.internal",
+        port: HOST_SETUP_PORT,
+        keepAlive: true,
+        keepAliveInitialDelay: 120000
+    },
     {
         start: ({ write }) =>
             write(command, stdioLength, args.length, ...args),
