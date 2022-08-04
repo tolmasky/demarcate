@@ -1,17 +1,20 @@
 {
   "name": "demarcate",
-  "version": "1.0.0-alpha.10",
+  "version": "1.0.0-alpha.11",
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
       "name": "demarcate",
-      "version": "1.0.0-alpha.10",
+      "version": "1.0.0-alpha.11",
       "license": "MIT",
       "dependencies": {
         "@await/spawn": "9.0.0",
         "ps-tree": "^1.2.0",
         "structured-stream": "2.0.0-alpha.4"
+      },
+      "engines": {
+        "node": ">=18.7.0"
       }
     },
     "node_modules/@await/event": {
