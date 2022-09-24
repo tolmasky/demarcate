@@ -100,12 +100,12 @@ const toFunctionBin = command => async function (stream, stdioLength, write, arg
 {
     try
     {
-        write("stdout", await command(...args));
+        write("stdio", 1, await command(...args));
         write("exited", 0);
     }
     catch (error)
     {
-        write("stderr", error + "");
+        write("stdio", 2, error + "");
         write("exited", 1);
     }
 }
